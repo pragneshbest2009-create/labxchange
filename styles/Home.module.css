@@ -1,0 +1,269 @@
+.main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem;
+}
+
+.header h1 {
+  margin: 0 0 0.25rem;
+  font-size: 1.75rem;
+}
+
+.header p {
+  margin: 0;
+  color: #64748b;
+}
+
+.sharedLink {
+  display: inline-block;
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.searchBox {
+  margin: 1.5rem 0 1rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.searchRow {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.searchInput {
+  flex: 1;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.searchBtn {
+  height: 42px;
+  padding: 0 18px;
+  background: #1d4ed8;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.searchBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.filterRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+}
+
+.filterLabel {
+  color: #64748b;
+  margin-right: 0.25rem;
+}
+
+.divider {
+  width: 1px;
+  height: 20px;
+  background: #e2e8f0;
+  margin: 0 0.5rem;
+}
+
+.tab {
+  padding: 4px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.78rem;
+}
+
+.tabActive {
+  border-color: #1d4ed8;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.resultsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.resultsCount {
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+.sortSelect {
+  height: 34px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+}
+
+.wishBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 10px;
+  padding: 0.6rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.wishBtn {
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.cardGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+}
+
+.cardTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.cardTitle {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.cardSpec {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.cardBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.badgeNew,
+.badgeUsed,
+.badgeCat {
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+.badgeNew {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.badgeUsed {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badgeCat {
+  background: #ede9fe;
+  color: #4c1d95;
+}
+
+.cardPrice {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.priceVal {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.priceNote {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.cardMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  color: #475569;
+  margin: 0.6rem 0;
+}
+
+.cardActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btnWish,
+.btnContact {
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btnWish {
+  border: 1px solid #cbd5e1;
+  background: #fff;
+}
+
+.wished {
+  border-color: #f43f5e;
+  color: #be123c;
+  background: #fff1f2;
+}
+
+.btnContact {
+  border: 1px solid #1d4ed8;
+  color: #1d4ed8;
+  background: #fff;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.pagination button {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  cursor: pointer;
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
