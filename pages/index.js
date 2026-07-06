@@ -17,7 +17,7 @@ export default function Home() {
   const [condition, setCondition] = useState('ALL');
   const [category, setCategory] = useState('All');
   const [sort, setSort] = useState('rel');
-  const [pricedOnly, setPricedOnly] = useState(true);
+  const [pricedOnly, setPricedOnly] = useState(false);
   const [pricedCount, setPricedCount] = useState(0);
   const [page, setPage] = useState(1);
   const [wishlist, setWishlist] = useState([]);
@@ -56,7 +56,17 @@ export default function Home() {
     setSearchQuery(query.trim());
   };
 
-  useEffect(() => { fetchResults(); }, [fetchResults]);
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setListings([]);
+      setTotal(0);
+      setPricedCount(0);
+      setSearchInfo('');
+      setLoading(false);
+      return;
+    }
+    fetchResults();
+  }, [fetchResults, searchQuery]);
 
   const contactHref = (item) => {
     if (item.contact_email) {
@@ -171,6 +181,13 @@ export default function Home() {
             <Link href={{ pathname: '/wishlist/new', query: { ids: wishlist.join(',') } }} className={styles.wishBtn}>
               Submit wishlist →
             </Link>
+          </div>
+        )}
+
+        {!loading && !searchQuery && (
+          <div className={styles.noResults}>
+            <h2>Search lab equipment</h2>
+            <p>Enter an instrument name (e.g. biotage, HPLC, Echo 650) and click Search. Deep price lookup runs when you search.</p>
           </div>
         )}
 

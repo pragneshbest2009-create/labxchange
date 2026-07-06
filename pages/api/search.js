@@ -40,12 +40,18 @@ export default async function handler(req, res) {
     }
 
     const combined = [...local, ...web.listings];
-    const enrich = await enrichListingsWithPrices(combined, { budgetMs: 52_000 });
+    const enrichBudget = search.length >= 2 ? 22_000 : 0;
+    const enrich = enrichBudget > 0
+      ? await enrichListingsWithPrices(combined, { budgetMs: enrichBudget })
+      : { pricesFetched: 0, pagesChecked: 0, pricedCount: combined.filter((l) => l.price > 0).length };
+
     const merged = mergeAndPaginateListings(combined, params);
 
     const priceNote = merged.pricedCount
       ? `${merged.pricedCount} with listed prices`
-      : 'No listed prices found yet';
+      : merged.unpricedCount > 0
+        ? `${merged.unpricedCount} found — uncheck “Listed prices only” to view all`
+        : 'No results found';
 
     return res.json({
       ...merged,
