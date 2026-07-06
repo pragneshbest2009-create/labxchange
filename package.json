@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "scrape": "cross-env RUN_NOW=true node labxchange_scraper.js"
+    "scrape": "cross-env RUN_NOW=true node labxchange_scraper.js",
+    "check:supabase": "node scripts/check-supabase.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",

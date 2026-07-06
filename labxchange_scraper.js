@@ -20,10 +20,46 @@ import * as cheerio from 'cheerio';
 import cron from 'node-cron';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
+const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY || '';
+
+let _supabase = null;
+function getSupabase() {
+  if (!_supabase) {
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('SUPABASE_URL and SUPABASE_SERVICE_KEY are required for database operations.');
+    }
+    _supabase = createClient(supabaseUrl, supabaseKey);
+  }
+  return _supabase;
+}
+
+async function isSupabaseReady() {
+  if (!supabaseUrl || !supabaseKey) {
+    console.warn('[Scraper] Missing SUPABASE_URL or SUPABASE_SERVICE_KEY — skipping database sync.');
+    return false;
+  }
+  try {
+    const res = await fetch(`${supabaseUrl.replace(/\/$/, '')}/rest/v1/`, {
+      headers: { apikey: supabaseKey },
+      signal: AbortSignal.timeout(8000),
+    });
+    return res.ok || res.status === 401 || res.status === 404;
+  } catch (err) {
+    const host = (() => { try { return new URL(supabaseUrl).hostname; } catch { return supabaseUrl; } })();
+    console.warn(`[Scraper] Supabase unreachable (${host}): ${err.cause?.code || err.message}`);
+    console.warn('[Scraper] Update GitHub repo secrets SUPABASE_URL + SUPABASE_SERVICE_KEY after creating a project.');
+    return false;
+  }
+}
+
+async function logScrapeResult(entry) {
+  try {
+    await getSupabase().from('scrape_log').insert(entry);
+  } catch (err) {
+    console.warn('[Scraper] Could not write scrape_log:', err.message);
+  }
+}
 
 // ──────────────────────────────────────────────
 // CATEGORY + TAG CLASSIFIER
@@ -234,7 +270,7 @@ async function upsertListings(listings) {
   for (const listing of listings) {
     try {
       // Check if listing with same name+source already exists
-      const { data: existing } = await supabase
+      const { data: existing } = await getSupabase()
         .from('listings')
         .select('id, price')
         .eq('name', listing.name)
@@ -244,7 +280,7 @@ async function upsertListings(listings) {
       if (existing) {
         // Update if price changed or scraped_at needs refresh
         if (existing.price !== listing.price) {
-          await supabase.from('listings').update({
+          await getSupabase().from('listings').update({
             price: listing.price,
             spec: listing.spec,
             scraped_at: listing.scraped_at
@@ -253,7 +289,7 @@ async function upsertListings(listings) {
         }
       } else {
         // Insert new listing
-        const { error } = await supabase.from('listings').insert(listing);
+        const { error } = await getSupabase().from('listings').insert(listing);
         if (error) { console.error('Insert error:', error.message); errors++; }
         else added++;
       }
@@ -271,6 +307,13 @@ async function upsertListings(listings) {
 // ──────────────────────────────────────────────
 async function runDailySync() {
   console.log(`\n[LabXChange Sync] ${new Date().toISOString()}`);
+
+  const dbReady = await isSupabaseReady();
+  if (!dbReady) {
+    console.log('[LabXChange Sync] Skipped — database not available.\n');
+    return { skipped: true };
+  }
+
   let totalAdded = 0, totalUpdated = 0;
 
   const sources = [
@@ -287,7 +330,7 @@ async function runDailySync() {
       totalAdded += added; totalUpdated += updated;
       console.log(`     ✓ ${added} added, ${updated} updated, ${errors} errors`);
 
-      await supabase.from('scrape_log').insert({
+      await logScrapeResult({
         source: src.name,
         status: 'success',
         listings_added: added,
@@ -295,7 +338,7 @@ async function runDailySync() {
       });
     } catch (err) {
       console.error(`  ✗ ${src.name} failed:`, err.message);
-      await supabase.from('scrape_log').insert({
+      await logScrapeResult({
         source: src.name,
         status: 'error',
         error_message: err.message
@@ -304,18 +347,26 @@ async function runDailySync() {
   }
 
   console.log(`\n[LabXChange Sync] Done — ${totalAdded} new, ${totalUpdated} updated\n`);
+  return { skipped: false, totalAdded, totalUpdated };
 }
 
 // ──────────────────────────────────────────────
 // ENTRY POINT
 // ──────────────────────────────────────────────
+async function main() {
+  try {
+    await runDailySync();
+    process.exit(0);
+  } catch (err) {
+    console.error('[LabXChange Scraper] Fatal error:', err.message);
+    process.exit(1);
+  }
+}
+
 if (process.env.RUN_NOW === 'true') {
-  // Run immediately (useful for GitHub Actions)
-  runDailySync().catch(console.error);
+  main();
 } else {
-  // Schedule: every day at 06:00 UTC
   console.log('[LabXChange Scraper] Scheduled — runs daily at 06:00 UTC');
-  cron.schedule('0 6 * * *', () => runDailySync().catch(console.error));
-  // Also run immediately on start
-  runDailySync().catch(console.error);
+  cron.schedule('0 6 * * *', () => main());
+  main();
 }

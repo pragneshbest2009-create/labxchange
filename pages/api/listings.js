@@ -1,5 +1,5 @@
 // pages/api/listings.js
-import { getSupabase, getSupabaseConfigError, isConnectionError, isSupabaseReachable, markSupabaseUnreachable } from '../../lib/supabase';
+import { getSupabase, getSupabaseConfigError, getSupabaseUnreachableMessage, isConnectionError, isSupabaseReachable, markSupabaseUnreachable } from '../../lib/supabase';
 import { queryDemoListings } from '../../lib/demoListings';
 import { mergeAndPaginateListings } from '../../lib/listingQuery';
 
@@ -26,7 +26,7 @@ export default async function handler(req, res) {
   if (!reachable) {
     return res.json({
       ...queryDemoListings(params),
-      warning: 'Supabase is unreachable — showing sample listings. Update your project URL in Vercel env vars.',
+      warning: getSupabaseUnreachableMessage(),
     });
   }
 
@@ -59,7 +59,7 @@ export default async function handler(req, res) {
         markSupabaseUnreachable();
         return res.json({
           ...queryDemoListings(params),
-          warning: 'Supabase is unreachable — showing sample listings. Update your project URL in Vercel env vars.',
+          warning: getSupabaseUnreachableMessage(),
         });
       }
       return res.status(500).json({ error: error.message });
@@ -73,7 +73,7 @@ export default async function handler(req, res) {
       markSupabaseUnreachable();
       return res.json({
         ...queryDemoListings(params),
-        warning: 'Supabase is unreachable — showing sample listings. Update your project URL in Vercel env vars.',
+        warning: getSupabaseUnreachableMessage(),
       });
     }
     return res.status(500).json({ error: err.message || 'Failed to load listings' });
