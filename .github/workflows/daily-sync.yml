@@ -23,6 +23,8 @@ jobs:
         run: npm ci
 
       - name: Run scraper
+        # Requires GitHub secrets: SUPABASE_URL, SUPABASE_SERVICE_KEY
+        # Repo → Settings → Secrets and variables → Actions
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
