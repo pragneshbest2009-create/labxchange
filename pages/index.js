@@ -10,24 +10,64 @@ export default function Home() {
   const [listings, setListings]   = useState([]);
   const [total, setTotal]         = useState(0);
   const [loading, setLoading]     = useState(false);
+  const [error, setError]         = useState('');
+  const [warning, setWarning]     = useState('');
   const [query, setQuery]         = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [condition, setCondition] = useState('ALL');
   const [category, setCategory]   = useState('All');
   const [sort, setSort]           = useState('rel');
   const [page, setPage]           = useState(1);
-  const [wishlist, setWishlist]   = useState([]);  // local shortlist
+  const [wishlist, setWishlist]   = useState([]);
+  const [searchSources, setSearchSources] = useState([]);
+  const [showSources, setShowSources] = useState(false);
 
   const fetchListings = useCallback(async () => {
     setLoading(true);
-    const params = new URLSearchParams({ q: query, category, condition, sort, page, limit: 20 });
-    const res = await fetch('/api/listings?' + params);
-    const data = await res.json();
-    setListings(data.listings || []);
-    setTotal(data.total || 0);
-    setLoading(false);
-  }, [query, category, condition, sort, page]);
+    setError('');
+    setWarning('');
+    const params = new URLSearchParams({ q: searchQuery, category, condition, sort, page, limit: 20 });
+    try {
+      const res = await fetch('/api/listings?' + params);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Search failed');
+      setListings(data.listings || []);
+      setTotal(data.total || 0);
+      if (data.warning) setWarning(data.warning);
+    } catch (err) {
+      setListings([]);
+      setTotal(0);
+      setError(err.message || 'Unable to load listings. Check your Supabase connection.');
+    } finally {
+      setLoading(false);
+    }
+  }, [searchQuery, category, condition, sort, page]);
+
+  const runSearch = () => {
+    setPage(1);
+    setSearchQuery(query.trim());
+  };
 
   useEffect(() => { fetchListings(); }, [fetchListings]);
+
+  useEffect(() => {
+    const q = searchQuery || query || 'liquid handler';
+    fetch('/api/search-sources?q=' + encodeURIComponent(q))
+      .then((r) => r.json())
+      .then((data) => setSearchSources(data.sources || []))
+      .catch(() => setSearchSources([]));
+  }, [searchQuery, query]);
+
+  const contactHref = (item) => {
+    if (item.contact_email) {
+      return `mailto:${item.contact_email}?subject=Enquiry: ${encodeURIComponent(item.name)}`;
+    }
+    return item.source_url;
+  };
+
+  const contactLabel = (item) => (
+    item.contact_email ? '✉ Contact vendor' : '↗ View & contact'
+  );
 
   // Auto-refresh every 5 minutes
   useEffect(() => {
@@ -56,6 +96,9 @@ export default function Home() {
           <Link href="/wishlist/shared" className={styles.sharedLink}>
             → Open shared wishlist page
           </Link>
+          <Link href="/sourcing/echo-650" className={styles.sharedLink}>
+            → Labcyte Echo 650 sourcing (vendor list)
+          </Link>
         </header>
 
         {/* Search bar */}
@@ -64,11 +107,11 @@ export default function Home() {
             <input
               value={query}
               onChange={e => setQuery(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && fetchListings()}
+              onKeyDown={e => e.key === 'Enter' && runSearch()}
               placeholder="Search by instrument, spec, or keyword…"
               className={styles.searchInput}
             />
-            <button onClick={fetchListings} className={styles.searchBtn} disabled={loading}>
+            <button onClick={runSearch} className={styles.searchBtn} disabled={loading}>
               {loading ? 'Searching…' : 'Search'}
             </button>
           </div>
@@ -79,7 +122,7 @@ export default function Home() {
             {['ALL','NEW','USED'].map(c => (
               <button key={c}
                 className={[styles.tab, condition===c ? styles.tabActive : ''].join(' ')}
-                onClick={() => setCondition(c)}>
+                onClick={() => { setCondition(c); setPage(1); }}>
                 {c==='ALL' ? 'All' : c==='NEW' ? 'New' : 'Used'}
               </button>
             ))}
@@ -88,19 +131,54 @@ export default function Home() {
             {CATEGORIES.map(c => (
               <button key={c}
                 className={[styles.tab, category===c ? styles.tabActive : ''].join(' ')}
-                onClick={() => setCategory(c)}>
+                onClick={() => { setCategory(c); setPage(1); }}>
                 {c}
               </button>
             ))}
           </div>
         </div>
 
+        <div className={styles.sourcesBox}>
+          <button
+            type="button"
+            className={styles.sourcesToggle}
+            onClick={() => setShowSources((v) => !v)}
+            aria-expanded={showSources}>
+            {showSources ? '▾' : '▸'} Search external websites ({searchSources.length})
+          </button>
+          {showSources && (
+            <ul className={styles.sourcesList}>
+              {searchSources.map((source) => (
+                <li key={source.id} className={styles.sourceRow}>
+                  <div>
+                    <a href={source.href} target="_blank" rel="noreferrer">{source.name}</a>
+                    <span className={styles.sourceDesc}>{source.description}</span>
+                  </div>
+                  <a href={source.href} target="_blank" rel="noreferrer" className={styles.sourceGo}>Open →</a>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {warning && (
+          <div className={styles.warningBanner} role="status">
+            {warning}
+          </div>
+        )}
+
+        {error && (
+          <div className={styles.errorBanner} role="alert">
+            {error}
+          </div>
+        )}
+
         {/* Results header */}
         <div className={styles.resultsHeader}>
           <span className={styles.resultsCount}>
             {loading ? 'Loading…' : `${total} instruments`}
           </span>
-          <select value={sort} onChange={e => setSort(e.target.value)} className={styles.sortSelect}>
+          <select value={sort} onChange={e => { setSort(e.target.value); setPage(1); }} className={styles.sortSelect}>
             <option value="rel">Relevance</option>
             <option value="priceAsc">Price: Low to high</option>
             <option value="priceDesc">Price: High to low</option>
@@ -127,6 +205,7 @@ export default function Home() {
                 <div className={styles.cardLeft}>
                   <h3 className={styles.cardTitle}>{item.name}</h3>
                   <p className={styles.cardSpec}>{item.spec}</p>
+                  {item.notes && <p className={styles.cardNotes}>{item.notes}</p>}
                   <div className={styles.cardBadges}>
                     <span className={item.condition==='NEW' ? styles.badgeNew : styles.badgeUsed}>
                       {item.condition} · {item.year}
@@ -154,9 +233,11 @@ export default function Home() {
                   onClick={() => toggleWish(item.id)}>
                   {wishlist.includes(item.id) ? '❤ Shortlisted' : '♡ Shortlist'}
                 </button>
-                <a href={`mailto:${item.contact_email}?subject=Enquiry: ${item.name}`}
+                <a href={contactHref(item)}
+                   target={item.contact_email ? undefined : '_blank'}
+                   rel={item.contact_email ? undefined : 'noreferrer'}
                    className={styles.btnContact}>
-                  ✉ Contact vendor
+                  {contactLabel(item)}
                 </a>
               </div>
             </div>

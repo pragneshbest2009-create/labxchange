@@ -21,7 +21,7 @@ import cron from 'node-cron';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
-  process.env.SUPABASE_URL,
+  process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY
 );
 
@@ -50,7 +50,8 @@ function extractTags(name, spec) {
   const text = `${name} ${spec}`.toLowerCase();
   const ALL_TAGS = ['hplc','uplc','lc-ms','gc-ms','nmr','mass spec','ftir','uv-vis','pcr','qpcr','centrifuge',
     'microscope','flow cytometer','liquid handler','plate reader','bioreactor','nmr','synthesizer',
-    'autosampler','detector','incubator','spectrophotometer','cell counter','sequencer','hts','dmpk','adme'];
+    'autosampler','detector','incubator','spectrophotometer','cell counter','sequencer','hts','dmpk','adme',
+    'echo','labcyte'];
   return ALL_TAGS.filter(t => text.includes(t));
 }
 
@@ -72,7 +73,7 @@ function parsePrice(str) {
  */
 async function scrapeLabX() {
   const results = [];
-  const SEARCH_TERMS = ['HPLC', 'mass spectrometer', 'NMR', 'PCR', 'centrifuge', 'liquid handler', 'bioreactor'];
+  const SEARCH_TERMS = ['HPLC', 'mass spectrometer', 'NMR', 'PCR', 'centrifuge', 'liquid handler', 'bioreactor', 'Labcyte Echo', 'Echo 650'];
 
   for (const term of SEARCH_TERMS) {
     try {
