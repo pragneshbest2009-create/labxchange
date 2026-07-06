@@ -375,6 +375,21 @@
   color: #4c1d95;
 }
 
+.badgeWeb {
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-weight: 600;
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.agentNote {
+  font-weight: 400;
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
 .cardPrice {
   text-align: right;
   flex-shrink: 0;
