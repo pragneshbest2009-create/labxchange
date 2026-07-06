@@ -17,19 +17,30 @@ export default function Home() {
   const [condition, setCondition] = useState('ALL');
   const [category, setCategory] = useState('All');
   const [sort, setSort] = useState('rel');
+  const [pricedOnly, setPricedOnly] = useState(true);
+  const [pricedCount, setPricedCount] = useState(0);
   const [page, setPage] = useState(1);
   const [wishlist, setWishlist] = useState([]);
 
   const fetchResults = useCallback(async () => {
     setLoading(true);
     setError('');
-    const params = new URLSearchParams({ q: searchQuery, category, condition, sort, page, limit: 20 });
+    const params = new URLSearchParams({
+      q: searchQuery,
+      category,
+      condition,
+      sort,
+      page,
+      limit: 20,
+      pricedOnly: pricedOnly ? '1' : '0',
+    });
     try {
       const res = await fetch('/api/search?' + params);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Search failed');
       setListings(data.listings || []);
       setTotal(data.total || 0);
+      setPricedCount(data.pricedCount || 0);
       setSearchInfo(data.message || '');
     } catch (err) {
       setListings([]);
@@ -38,7 +49,7 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, category, condition, sort, page]);
+  }, [searchQuery, category, condition, sort, page, pricedOnly]);
 
   const runSearch = () => {
     setPage(1);
@@ -91,11 +102,11 @@ export default function Home() {
               className={styles.searchInput}
             />
             <button onClick={runSearch} className={styles.searchBtn} disabled={loading}>
-              {loading ? 'Searching web…' : 'Search'}
+              {loading ? 'Searching (up to 1 min)…' : 'Search'}
             </button>
           </div>
           <p className={styles.searchHint}>
-            Our agent searches LabX, EquipNet, Machinio, BioSurplus, and the wider web for matching equipment.
+            Deep search across LabX, EquipNet, Machinio, BioSurplus, and the wider web — may take up to 1 minute to fetch listed prices.
           </p>
 
           <div className={styles.filterRow}>
@@ -129,17 +140,29 @@ export default function Home() {
 
         <div className={styles.resultsHeader}>
           <span className={styles.resultsCount}>
-            {loading ? 'Searching the internet…' : `${total} results`}
+            {loading
+              ? 'Deep search in progress — checking listing pages for prices…'
+              : `${total} result${total === 1 ? '' : 's'}${pricedCount > 0 ? ` · ${pricedCount} with listed prices` : ''}`}
             {searchInfo && !loading && <span className={styles.agentNote}> · {searchInfo}</span>}
           </span>
-          <select
-            value={sort}
-            onChange={(e) => { setSort(e.target.value); setPage(1); }}
-            className={styles.sortSelect}>
-            <option value="rel">Relevance</option>
-            <option value="priceAsc">Price: Low to high</option>
-            <option value="priceDesc">Price: High to low</option>
-          </select>
+          <div className={styles.resultsControls}>
+            <label className={styles.pricedToggle}>
+              <input
+                type="checkbox"
+                checked={pricedOnly}
+                onChange={(e) => { setPricedOnly(e.target.checked); setPage(1); }}
+              />
+              Listed prices only
+            </label>
+            <select
+              value={sort}
+              onChange={(e) => { setSort(e.target.value); setPage(1); }}
+              className={styles.sortSelect}>
+              <option value="rel">Relevance</option>
+              <option value="priceAsc">Price: Low to high</option>
+              <option value="priceDesc">Price: High to low</option>
+            </select>
+          </div>
         </div>
 
         {wishlist.length > 0 && (
@@ -154,7 +177,11 @@ export default function Home() {
         {!loading && total === 0 && searchQuery && (
           <div className={styles.noResults}>
             <h2>No results for &ldquo;{searchQuery}&rdquo;</h2>
-            <p>Try a broader term, a different category, or check spelling.</p>
+            <p>
+              {pricedOnly
+                ? 'No listings with a listed price were found. Uncheck “Listed prices only” to see all matches.'
+                : 'Try a broader term, a different category, or check spelling.'}
+            </p>
           </div>
         )}
 
@@ -175,12 +202,16 @@ export default function Home() {
                   </div>
                 </div>
                 <div className={styles.cardPrice}>
-                  <div className={styles.priceVal}>
-                    {item.price ? `$${item.price.toLocaleString()}` : 'POA'}
-                  </div>
-                  <div className={styles.priceNote}>
-                    {item.negotiable ? 'Negotiable' : 'Contact for price'}
-                  </div>
+                  {item.price ? (
+                    <>
+                      <div className={styles.priceVal}>${item.price.toLocaleString()}</div>
+                      <div className={styles.priceNote}>
+                        {item.negotiable ? 'Negotiable' : 'Listed price'}
+                      </div>
+                    </>
+                  ) : (
+                    <div className={styles.priceContact}>Contact for price</div>
+                  )}
                 </div>
               </div>
               <div className={styles.cardMeta}>

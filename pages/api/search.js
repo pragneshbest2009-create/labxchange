@@ -2,7 +2,7 @@
 import { searchInternet } from '../../lib/webSearchAgent';
 import { getSupabase, getSupabaseConfigError, isSupabaseReachable } from '../../lib/supabase';
 import { mergeAndPaginateListings, filterListingRows } from '../../lib/listingQuery';
-import { queryCuratedListings } from '../../lib/curatedListings';
+import { enrichListingsWithPrices } from '../../lib/priceExtractor';
 
 function sanitize(term) {
   return String(term).trim().replace(/,/g, ' ').slice(0, 100);
@@ -11,9 +11,9 @@ function sanitize(term) {
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).end();
 
-  const { q, category, condition, sort, page = 1, limit = 20 } = req.query;
+  const { q, category, condition, sort, page = 1, limit = 20, pricedOnly } = req.query;
   const search = sanitize(q || '');
-  const params = { q: search, category, condition, sort, page, limit };
+  const params = { q: search, category, condition, sort, page, limit, pricedOnly };
 
   try {
     const web = await searchInternet(params);
@@ -39,16 +39,23 @@ export default async function handler(req, res) {
       }
     }
 
-    const curated = search ? queryCuratedListings(params) : [];
-    const merged = mergeAndPaginateListings([...local, ...web.listings, ...curated], params);
+    const combined = [...local, ...web.listings];
+    const enrich = await enrichListingsWithPrices(combined, { budgetMs: 52_000 });
+    const merged = mergeAndPaginateListings(combined, params);
+
+    const priceNote = merged.pricedCount
+      ? `${merged.pricedCount} with listed prices`
+      : 'No listed prices found yet';
 
     return res.json({
       ...merged,
       agent: true,
       sourcesSearched: web.sourcesSearched,
+      pricesFetched: enrich.pricesFetched,
+      pagesChecked: enrich.pagesChecked,
       message: search
-        ? `Searched ${web.sourcesSearched} web sources for "${search}"`
-        : `Browsing lab equipment across ${web.sourcesSearched} web sources`,
+        ? `${priceNote} · searched ${web.sourcesSearched} web sources for "${search}"`
+        : `${priceNote} · browsing ${web.sourcesSearched} web sources`,
     });
   } catch (err) {
     return res.status(500).json({ error: err.message || 'Internet search failed' });
