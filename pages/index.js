@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import SearchResultsModal from '../components/SearchResultsModal';
 import styles from '../styles/Home.module.css';
 
 const CATEGORIES = ['All','Analytical','Synthesis','Biology','Life Science','Drug Discovery','DMPK'];
@@ -21,6 +22,8 @@ export default function Home() {
   const [wishlist, setWishlist]   = useState([]);
   const [searchSources, setSearchSources] = useState([]);
   const [showSources, setShowSources] = useState(false);
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [externalTab, setExternalTab] = useState('labx');
 
   const fetchListings = useCallback(async () => {
     setLoading(true);
@@ -34,6 +37,7 @@ export default function Home() {
       setListings(data.listings || []);
       setTotal(data.total || 0);
       if (data.warning) setWarning(data.warning);
+      if (searchQuery && (data.listings || []).length === 0) setShowSources(true);
     } catch (err) {
       setListings([]);
       setTotal(0);
@@ -44,8 +48,14 @@ export default function Home() {
   }, [searchQuery, category, condition, sort, page]);
 
   const runSearch = () => {
+    const term = query.trim();
     setPage(1);
-    setSearchQuery(query.trim());
+    setSearchQuery(term);
+    if (term) {
+      setShowSearchModal(true);
+      setShowSources(true);
+      setExternalTab('labx');
+    }
   };
 
   useEffect(() => { fetchListings(); }, [fetchListings]);
@@ -58,6 +68,13 @@ export default function Home() {
       .catch(() => setSearchSources([]));
   }, [searchQuery, query]);
 
+  useEffect(() => {
+    if (!showSearchModal) return undefined;
+    const onKey = (e) => { if (e.key === 'Escape') setShowSearchModal(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showSearchModal]);
+
   const contactHref = (item) => {
     if (item.contact_email) {
       return `mailto:${item.contact_email}?subject=Enquiry: ${encodeURIComponent(item.name)}`;
@@ -68,6 +85,11 @@ export default function Home() {
   const contactLabel = (item) => (
     item.contact_email ? '✉ Contact vendor' : '↗ View & contact'
   );
+
+  const activeSearchTerm = searchQuery || query;
+  const labxSearchUrl = activeSearchTerm
+    ? `https://www.labx.com/listing/search?q=${encodeURIComponent(activeSearchTerm)}&type=instrument`
+    : 'https://www.labx.com/listing/search?type=instrument';
 
   // Auto-refresh every 5 minutes
   useEffect(() => {
@@ -108,13 +130,24 @@ export default function Home() {
               value={query}
               onChange={e => setQuery(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && runSearch()}
-              placeholder="Search by instrument, spec, or keyword…"
+              placeholder="Search our synced inventory (e.g. HPLC, biotage, Echo 650)…"
               className={styles.searchInput}
             />
+            <a
+              href={labxSearchUrl}
+              target="_blank"
+              rel="noreferrer"
+              className={styles.labxBtn}
+              title="Search live listings on LabX.com">
+              LabX ↗
+            </a>
             <button onClick={runSearch} className={styles.searchBtn} disabled={loading}>
               {loading ? 'Searching…' : 'Search'}
             </button>
           </div>
+          <p className={styles.searchHint}>
+            Click <strong>Search</strong> to query our database and open a popup with live LabX, EquipNet, and other marketplace results for the same term.
+          </p>
 
           {/* Condition tabs */}
           <div className={styles.filterRow}>
@@ -137,6 +170,12 @@ export default function Home() {
             ))}
           </div>
         </div>
+
+        {searchQuery && !showSearchModal && (
+          <button type="button" className={styles.reopenModal} onClick={() => setShowSearchModal(true)}>
+            ↗ Reopen live external search for &ldquo;{searchQuery}&rdquo;
+          </button>
+        )}
 
         <div className={styles.sourcesBox}>
           <button
@@ -197,6 +236,25 @@ export default function Home() {
           </div>
         )}
 
+        {/* No results — point to LabX and external sites */}
+        {!loading && searchQuery && total === 0 && (
+          <div className={styles.noResults}>
+            <h2>No &ldquo;{searchQuery}&rdquo; in our synced inventory</h2>
+            <p>
+              LabXChange searches your database ({total} matches). LabX.com has many more listings
+              that are not synced here yet.
+            </p>
+            <div className={styles.noResultsActions}>
+              <a href={labxSearchUrl} target="_blank" rel="noreferrer" className={styles.btnLabxPrimary}>
+                Search &ldquo;{searchQuery}&rdquo; on LabX.com →
+              </a>
+            </div>
+            <p className={styles.noResultsNote}>
+              Tip: expand <strong>Search external websites</strong> below for EquipNet, Machinio, and other dealers.
+            </p>
+          </div>
+        )}
+
         {/* Listing cards */}
         <div className={styles.cardGrid}>
           {listings.map(item => (
@@ -253,6 +311,18 @@ export default function Home() {
           </div>
         )}
       </main>
+
+      <SearchResultsModal
+        open={showSearchModal}
+        term={searchQuery}
+        internalListings={listings}
+        internalTotal={total}
+        internalLoading={loading}
+        sources={searchSources}
+        activeTab={externalTab}
+        onTabChange={setExternalTab}
+        onClose={() => setShowSearchModal(false)}
+      />
     </>
   );
 }

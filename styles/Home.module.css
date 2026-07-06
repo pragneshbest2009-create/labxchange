@@ -148,6 +148,99 @@
   cursor: not-allowed;
 }
 
+.labxBtn {
+  height: 42px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  background: #fff;
+  color: #1d4ed8;
+  border: 1px solid #1d4ed8;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.labxBtn:hover {
+  background: #eff6ff;
+}
+
+.searchHint {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.reopenModal {
+  display: block;
+  width: 100%;
+  margin-bottom: 0.75rem;
+  padding: 0.55rem 0.85rem;
+  border: 1px dashed #93c5fd;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+
+.reopenModal:hover {
+  background: #dbeafe;
+}
+
+.noResults {
+  margin-bottom: 1rem;
+  padding: 1rem 1.1rem;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+}
+
+.noResults h2 {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+}
+
+.noResults p {
+  margin: 0 0 0.75rem;
+  font-size: 0.88rem;
+  color: #475569;
+  line-height: 1.45;
+}
+
+.noResultsActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.btnLabxPrimary {
+  display: inline-block;
+  padding: 8px 16px;
+  background: #1d4ed8;
+  color: #fff;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.btnLabxPrimary:hover {
+  background: #1e40af;
+}
+
+.noResultsNote {
+  margin: 0 !important;
+  font-size: 0.8rem !important;
+  color: #64748b !important;
+}
+
 .filterRow {
   display: flex;
   flex-wrap: wrap;

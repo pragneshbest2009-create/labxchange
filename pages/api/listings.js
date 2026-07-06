@@ -41,7 +41,7 @@ export default async function handler(req, res) {
 
     if (search) {
       const pattern = `%${search.replace(/[%_]/g, '\\$&')}%`;
-      query = query.or(`name.ilike.${pattern},spec.ilike.${pattern}`);
+      query = query.or(`name.ilike.${pattern},spec.ilike.${pattern},source_name.ilike.${pattern}`);
     }
 
     if (category && category !== 'All') query = query.eq('category', category);
